@@ -12,15 +12,12 @@ recoger_info <- function(empresa, Nempleados, rts, secondstage, df, model = "lin
     dmu_ref <- dmu_ref_orig[-which(df$DMU %in% blacklist)]
    
   }
+  
+  
   if (!dmu_eval %in% dmu_ref) {
     dmu_ref <- sort(c(dmu_eval, dmu_ref))
   }
-  # 
-  # numblacklist <- dmu_ref_orig[which(names(dmu_ref_orig) %in% blacklist)]
-  # if (length(numblacklist) > 0) {
-  #   auxkk <- which(dmu_ref %in% numblacklist)
-  #   if (length(auxkk) > 0) dmu_ref <- dmu_ref[-auxkk]
-  # }
+ 
   
   
   # Para evitar errores numéricos, hay que re-escalar los datos ----

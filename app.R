@@ -152,7 +152,7 @@ server <- function(input, output, session) {
   ## Reset function ----
   reset_dash <- function(){
     values$upload_state <- 'reset'
-    current_data(data_df)
+    current_data(NULL)
     is_finished(FALSE)
     
     output$upload_dataUI <- renderUI({
@@ -220,6 +220,7 @@ server <- function(input, output, session) {
   })
   
   
+
   ## Reading data (either default or uploaded file) -----
   observeEvent(toListen(),{
     if(is_finished()){
@@ -232,9 +233,10 @@ server <- function(input, output, session) {
          infoBox("File","default", icon = icon("list"))
          })
     }else { # Custom data
+      current_data(NULL)
       inFile <- file_input()
       if(!is.null(inFile)){
-        df <-  tryCatch(read.csv(inFile$datapath, sep = " "),    
+        df <-  tryCatch(read.csv(inFile$datapath, sep = " "),
                         error=function(e) {
                           message('An Error Occurred')
                           print(e)
@@ -322,51 +324,54 @@ server <- function(input, output, session) {
   # Checking and Fixing the data ----
   observeEvent(toListen(),{
     df <- current_data()
-    if(!is.null(df)){
-      pass <- check_data(df)
-      mess <- NULL
-      if(pass == 0){
-        mess <- "Wrong number of columns!\n Should be 5 or 6"
-        df <- NULL
-        showModal(modalDialog(HTML(mess), 
-                              title = "Warning!",
-                              footer = modalButton("Aceptar")))  
-
-      }else if(pass == -1){
-        mess <- "Wrong data types!\n Should be numeric"
-        df <- NULL
-        showModal(modalDialog(HTML(mess), 
-                              title = "Warning!",
-                              footer = modalButton("Aceptar")))  
-
-      }else if(pass == -2){
-        mess <- "Warning: DMU names changed to alphanumeric"
-        df[,1] <- paste0("DMU",df[,1])
-        showModal(modalDialog(HTML(mess),
-                              title = "Warning!",
-                              footer = modalButton("Aceptar")))
-
-      }
+    if(input$dataselection == 2){
       if(!is.null(df)){
-        ncols <- ncol(df)
-        colnames(df)[1:5] <- c("DMU", "Input1", "Input2", "Input3", "Output")
-        if (ncols == 5){
-          mess <- paste0("Number of employees assumed 1 for all DMUs.<br>",mess)
-          
-          df$Nemployees <- 1
+        pass <- check_data(df)
+        mess <- NULL
+        if(pass == 0){
+          mess <- "Wrong number of columns!\n Should be 5 or 6"
+          df <- NULL
           showModal(modalDialog(HTML(mess), 
                                 title = "Warning!",
                                 footer = modalButton("Aceptar")))  
-        }else{
-          colnames(df)[6] <- "Nemployees"          
+          
+        }else if(pass == -1){
+          mess <- "Wrong data types!\n Should be numeric"
+          df <- NULL
+          showModal(modalDialog(HTML(mess), 
+                                title = "Warning!",
+                                footer = modalButton("Aceptar")))  
+          
+        }else if(pass == -2){
+          mess <- "Warning: DMU names changed to alphanumeric"
+          df[,1] <- paste0("DMU",df[,1])
+          showModal(modalDialog(HTML(mess),
+                                title = "Warning!",
+                                footer = modalButton("Aceptar")))
+          
         }
-      }
-      current_data(df)
+        if(!is.null(df)){
+          ncols <- ncol(df)
+          colnames(df)[1:5] <- c("DMU", "Input1", "Input2", "Input3", "Output")
+          if (ncols == 5){
+            mess <- paste0("Number of employees assumed 1 for all DMUs.<br>",mess)
+            
+            df$Nemployees <- 1
+            showModal(modalDialog(HTML(mess), 
+                                  title = "Warning!",
+                                  footer = modalButton("Aceptar")))  
+          }else{
+            colnames(df)[6] <- "Nemployees"          
+          }
+        }
+        current_data(df)
         
-      
-    }
-  })  
-  
+        
+      }else{
+        current_data(NULL)}
+    }  
+  }
+  )
   
   # DEA Logic ----------------------
 
@@ -935,6 +940,7 @@ server <- function(input, output, session) {
         })
    
         ### Inefficiency value (beta) ----
+        
         output$beta_value <- renderInfoBox({
           req(current_data())
           valor <- beta_value(info$beta)
@@ -1066,17 +1072,34 @@ server <- function(input, output, session) {
             
             tabla_ref <- data.frame(NULL)
             
-            for(i in 1:nrow(df)){
-              tabla_ref <- rbind(tabla_ref, 
-                                 data.frame(
-                                   Company = df[i, "Empresa"],
-                                   N.employees = current_data()$Nemployees[current_data()$DMU == df[i, "Empresa"]],
-                                   Total.assets= paste0(valorTA[i], TA$oid[i], "€"),
-                                   Staff.costs = paste0(valorGP[i], GP$oid[i], "€"),
-                                   Other.costs= paste0(valorRG[i], RG$oid[i], "€"),
-                                   Operating.revenues= paste0(valorIE[i], IE$oid[i], "€")
-                                   
-                                 ))
+            colnames(current_data())
+            
+            if("Nemployees" %in% colnames(current_data())){
+              for(i in 1:nrow(df)){
+                tabla_ref <- rbind(tabla_ref, 
+                                   data.frame(
+                                     Company = df[i, "Empresa"],
+                                     N.employees = current_data()$Nemployees[current_data()$DMU == df[i, "Empresa"]],
+                                     Total.assets= paste0(valorTA[i], TA$oid[i], "€"),
+                                     Staff.costs = paste0(valorGP[i], GP$oid[i], "€"),
+                                     Other.costs= paste0(valorRG[i], RG$oid[i], "€"),
+                                     Operating.revenues= paste0(valorIE[i], IE$oid[i], "€")
+                                     
+                                   ))
+              }
+            }else{
+              for(i in 1:nrow(df)){
+                tabla_ref <- rbind(tabla_ref, 
+                                   data.frame(
+                                     Company = df[i, "Empresa"],
+                                    # N.employees = current_data()$Nemployees[current_data()$DMU == df[i, "Empresa"]],
+                                     Total.assets= paste0(valorTA[i], TA$oid[i], "€"),
+                                     Staff.costs = paste0(valorGP[i], GP$oid[i], "€"),
+                                     Other.costs= paste0(valorRG[i], RG$oid[i], "€"),
+                                     Operating.revenues= paste0(valorIE[i], IE$oid[i], "€")
+                                     
+                                   ))
+              }
             }
            
             return(datatable(tabla_ref))
