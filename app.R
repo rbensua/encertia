@@ -1,4 +1,4 @@
-options(rgl.useNULL=TRUE) # for MAC rgl incompatibility
+options(rgl.useNULL=TRUE) # for MAC Apple rgl incompatibility
 # Loading libraries ------
 library(plyr)
 library(dplyr)
