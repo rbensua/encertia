@@ -1,0 +1,12 @@
+name: encertia
+title: encertia
+username: rbensua
+account: rbensua
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 15790344
+bundleId: 11049404
+url: https://rbensua.shinyapps.io/encertia/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
